@@ -173,12 +173,16 @@ function Resource({ k, data, open, reload, toast }) {
     catch (e) { toast(e.message, 'err'); }
   };
   const csv = () => {
-    if (!shown.length) return;
+    if (!shown.length) { toast(`Nothing to export yet. Add a ${cfg.singular} first.`, 'err'); return; }
     const keys = Object.keys(shown[0]).filter((x) => x !== 'id');
     const esc = (x) => `"${String(x ?? '').replace(/"/g, '""')}"`;
-    const text = [keys.join(','), ...shown.map((r) => keys.map((x) => esc(r[x])).join(','))].join('\n');
+    const text = [keys.join(','), ...shown.map((r) => keys.map((x) => esc(r[x])).join(','))].join('\r\n');
+    const url = URL.createObjectURL(new Blob(['\ufeff' + text], { type: 'text/csv;charset=utf-8' }));
     const a = document.createElement('a');
-    a.href = URL.createObjectURL(new Blob([text], { type: 'text/csv' })); a.download = `${k}-${today()}.csv`; a.click();
+    a.href = url; a.download = `${k}-${today()}.csv`;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    toast(`Exported ${shown.length} ${shown.length === 1 ? cfg.singular : cfg.title.toLowerCase()}`);
   };
   const total = cfg.sum ? shown.reduce((a, r) => a + Number(r[cfg.sum]), 0) : null;
   return (
@@ -297,7 +301,7 @@ function Dashboard({ data, open }) {
 
 /* ---------- Login ---------- */
 function Login({ onDone }) {
-  const [pw, setPw] = useState(''); const [err, setErr] = useState(''); const [busy, setBusy] = useState(false);
+  const [pw, setPw] = useState(''); const [show, setShow] = useState(false); const [err, setErr] = useState(''); const [busy, setBusy] = useState(false);
   const go = async (e) => {
     e.preventDefault(); setBusy(true); setErr('');
     try { const { token } = await api('login', { method: 'POST', body: { password: pw } }); localStorage.setItem('fc_token', token); onDone(); }
@@ -307,7 +311,16 @@ function Login({ onDone }) {
     <div className="login stripes">
       <form className="modal" onSubmit={go}>
         <h1>Club Manager</h1><p className="muted">Admin sign in</p>
-        <label>Password<input type="password" autoFocus value={pw} onChange={(e) => setPw(e.target.value)} /></label>
+        <label>Password
+          <div className="pw">
+            <input type={show ? 'text' : 'password'} autoFocus autoComplete="current-password" value={pw} onChange={(e) => setPw(e.target.value)} />
+            <button type="button" className="eye" aria-label={show ? 'Hide password' : 'Show password'} aria-pressed={show} onClick={() => setShow(!show)}>
+              <svg viewBox="0 0 24 24" className="ico" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                {show ? <><path d="M3 3l18 18" /><path d="M10.6 6.2A9.8 9.8 0 0 1 12 6c5 0 8.5 4 9.5 6a14 14 0 0 1-3 3.8M6.5 7.6C4.4 9 3 11 2.5 12c1 2 4.5 6 9.5 6 1.5 0 2.8-.4 4-1" /><path d="M9.9 10a3 3 0 0 0 4.1 4.1" /></> : <><path d="M2.5 12C3.5 10 7 6 12 6s8.5 4 9.5 6c-1 2-4.5 6-9.5 6s-8.5-4-9.5-6z" /><circle cx="12" cy="12" r="3" /></>}
+              </svg>
+            </button>
+          </div>
+        </label>
         {err && <p className="error">{err}</p>}
         <button className="primary" disabled={busy || !pw}>{busy ? 'Signing in…' : 'Sign in'}</button>
       </form>
