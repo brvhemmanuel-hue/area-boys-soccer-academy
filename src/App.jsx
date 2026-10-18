@@ -401,7 +401,7 @@ function Login({ onDone }) {
   };
   return (
     <div className="login">
-      <div className="login-head"><img src="/icon-192.png" alt="" /><h1>Club Manager</h1><p>Admin portal</p></div>
+      <div className="login-head"><img src="/icon-192.png" alt="" /><h1>AREA BOYS FC</h1><p>Admin portal</p></div>
       <form className="modal" onSubmit={go}>
         <h2>Welcome back</h2><p className="muted">Sign in to continue</p>
         <label>Password
@@ -468,7 +468,7 @@ export default function App() {
       </div>
       {menu && <div className="drawer-scrim" onClick={() => setMenu(false)} />}
       <aside className={`side stripes ${menu ? 'open' : ''}`}>
-        <div className="brand">Club<br />Manager</div>
+        <div className="brand">AREA BOYS<br />FC</div>
         <nav>{NAV.map((n) => (
           <button key={n} className={tab === n ? 'on' : ''} onClick={() => go(n)}>
             <Icon n={n} /><span>{label(n)}</span>
