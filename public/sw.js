@@ -1,5 +1,5 @@
 // App-shell cache. API calls are never cached so financial data is always live.
-const V = 'club-v1';
+const V = 'club-v3';
 const SHELL = ['/', '/manifest.webmanifest', '/icon-192.png', '/icon-512.png'];
 self.addEventListener('install', (e) => { e.waitUntil(caches.open(V).then((c) => c.addAll(SHELL))); self.skipWaiting(); });
 self.addEventListener('activate', (e) => {
@@ -11,6 +11,6 @@ self.addEventListener('fetch', (e) => {
   if (r.method !== 'GET' || u.origin !== location.origin || u.pathname.startsWith('/api/')) return;
   if (r.mode === 'navigate') { e.respondWith(fetch(r).catch(() => caches.match('/'))); return; }
   e.respondWith(caches.match(r).then((hit) => hit || fetch(r).then((res) => {
-    const copy = res.clone(); caches.open(V).then((c) => c.put(r, copy)); return res;
+    if (res.ok) { const copy = res.clone(); caches.open(V).then((c) => c.put(r, copy)); } return res;
   })));
 });
