@@ -468,7 +468,7 @@ export default function App() {
       </div>
       {menu && <div className="drawer-scrim" onClick={() => setMenu(false)} />}
       <aside className={`side stripes ${menu ? 'open' : ''}`}>
-        <div className="brand">AREA BOYS<br />FC</div>
+        <div className="brand">AREA BOYS{' '}<br />FC</div>
         <nav>{NAV.map((n) => (
           <button key={n} className={tab === n ? 'on' : ''} onClick={() => go(n)}>
             <Icon n={n} /><span>{label(n)}</span>
