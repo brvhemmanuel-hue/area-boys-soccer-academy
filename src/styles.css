@@ -58,8 +58,20 @@ tbody tr:hover{background:color-mix(in srgb,var(--lamp) 14%,transparent)}.num{te
 .modal{background:var(--card);border-radius:14px;padding:1.5rem;width:min(560px,100%);max-height:92vh;overflow:auto;animation:pop .18s}
 .modal h2{font-size:1.6rem}.modal label{display:flex;flex-direction:column;gap:.25rem;font-size:.92rem;color:var(--muted)}
 .modal .grid{display:grid;grid-template-columns:1fr 1fr;gap:.8rem}.wide{grid-column:1/-1}
-.login{min-height:100vh;display:grid;place-items:center;padding:1rem;
- background:linear-gradient(rgba(8,24,16,.4),rgba(8,24,16,.72)),url('/login-bg.jpg') center 20%/cover no-repeat,repeating-linear-gradient(90deg,var(--pitch) 0 44px,var(--pitch2) 44px 88px)}
+.login{min-height:100vh;display:grid;place-items:center;padding:1rem;position:relative;isolation:isolate;overflow:hidden;
+ background:repeating-linear-gradient(90deg,var(--pitch) 0 44px,var(--pitch2) 44px 88px)}
+.login::before{content:'';position:absolute;inset:0;z-index:-2;
+ background:linear-gradient(rgba(8,24,16,.35),rgba(8,24,16,.75)),url('/login-bg.jpg') center 15%/cover no-repeat}
+.login::after{content:'';display:none}
+@media(min-width:900px){
+ .login{justify-items:end;padding:2rem max(2rem,9vw)}
+ .login::before{background:linear-gradient(rgba(8,24,16,.7),rgba(8,24,16,.85)),url('/login-bg.jpg') center/cover no-repeat;filter:blur(22px);transform:scale(1.15)}
+ .login::after{display:block;position:absolute;z-index:-1;left:max(2rem,8vw);top:50%;transform:translateY(-50%);
+  height:min(90vh,780px);aspect-ratio:387/516;background:url('/login-bg.jpg') center/cover no-repeat;border-radius:18px;
+  border:3px solid var(--lamp);box-shadow:0 24px 60px rgba(0,0,0,.5)}
+}
+@media(max-width:899px){.login{align-items:end;padding-bottom:calc(2rem + env(safe-area-inset-bottom))}}
+.login .modal{display:flex;flex-direction:column;gap:.8rem;width:min(380px,100%)}
 .pw{position:relative}.pw input{padding-right:2.8rem}
 .eye{position:absolute;right:.25rem;top:50%;transform:translateY(-50%);border:0;background:transparent;padding:.4rem;color:var(--muted);display:grid;place-items:center}
 .eye:hover{color:var(--ink);background:transparent}.login .modal{display:flex;flex-direction:column;gap:.8rem;width:min(380px,100%)}
