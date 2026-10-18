@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState, useCallback } from 'react';
+import { IMPORTS, POSITIONS, STATUSES, parseCSV, alias, validate } from './importer.js';
 
 const CUR = 'GH₵'; // change to your currency
 const money = (n) => `${CUR} ${Number(n || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
@@ -20,8 +21,6 @@ async function api(path, opts = {}) {
   return data;
 }
 
-const POSITIONS = ['Goalkeeper', 'Defender', 'Midfielder', 'Forward', 'Coach', 'Staff'];
-const STATUSES = ['active', 'injured', 'suspended', 'inactive'];
 const pill = (v) => <span className={`pill ${String(v).toLowerCase()}`}>{v}</span>;
 
 const CFG = {
@@ -111,7 +110,7 @@ const CFG = {
     ],
   },
 };
-const NAV = ['dashboard', ...Object.keys(CFG)];
+const NAV = ['dashboard', ...Object.keys(CFG), 'import'];
 
 /* ---------- Form modal (create & edit) ---------- */
 function FormModal({ k, initial, data, onClose, onSaved, toast }) {
@@ -299,6 +298,99 @@ function Dashboard({ data, open }) {
   );
 }
 
+/* ---------- Import page (templates + CSV upload) ---------- */
+function ImportPage({ data, reload, toast }) {
+  const [type, setType] = useState('members');
+  const [file, setFile] = useState('');
+  const [rows, setRows] = useState(null);
+  const [fatal, setFatal] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [drag, setDrag] = useState(false);
+  const [done, setDone] = useState(null);
+  const cfg = IMPORTS[type];
+  const reset = () => { setRows(null); setFile(''); setFatal(''); setDone(null); };
+  const downloadTemplate = () => {
+    const esc = (x) => `"${String(x ?? '').replace(/"/g, '""')}"`;
+    const text = [cfg.cols, ...cfg.sample].map((r) => r.map(esc).join(',')).join('\r\n');
+    const url = URL.createObjectURL(new Blob(['\ufeff' + text], { type: 'text/csv;charset=utf-8' }));
+    const a = document.createElement('a'); a.href = url; a.download = `${type}-template.csv`;
+    document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(url), 1000);
+  };
+  const readFile = async (f) => {
+    if (!f) return; reset(); setFile(f.name);
+    if (/\.xlsx?$/i.test(f.name)) { setFatal('Excel files cannot be read directly. In Excel choose File > Save As > CSV UTF-8, then upload that CSV.'); return; }
+    const table = parseCSV(await f.text());
+    if (table.length < 2) { setFatal('No data rows found. Download the template and fill in at least one row under the headings.'); return; }
+    if (table.length - 1 > 1000) { setFatal('A maximum of 1,000 rows can be imported at once. Please split the file.'); return; }
+    const heads = table[0].map((h) => alias(type, h));
+    const missing = cfg.required.filter((c) => !heads.includes(c));
+    if (missing.length) { setFatal(`Missing column: ${missing.join(', ')}. Download the template to see the expected headings.`); return; }
+    setRows(table.slice(1).map((cells) => {
+      const raw = {}; heads.forEach((h, i) => { raw[h] = (cells[i] ?? '').trim(); });
+      return { raw, ...validate(type, raw, data) };
+    }));
+  };
+  const good = rows ? rows.filter((r) => !r.errors.length) : [];
+  const bad = rows ? rows.length - good.length : 0;
+  const run = async () => {
+    setBusy(true);
+    try {
+      const res = await api('import', { method: 'POST', body: { type, rows: good.map((r) => r.out) } });
+      setDone(res); setRows(null); setFile(''); toast(`Imported ${res.inserted} ${cfg.label.toLowerCase()}`); reload();
+    } catch (e) { toast(e.message, 'err'); }
+    setBusy(false);
+  };
+  return (
+    <section>
+      <header className="page-head"><h1>Import data</h1></header>
+      <div className="panel stepbox">
+        <h2>1. Choose what to import</h2>
+        <div className="seg">{Object.entries(IMPORTS).map(([k, v]) => <button key={k} className={type === k ? 'on' : ''} onClick={() => { setType(k); reset(); }}>{v.label}</button>)}</div>
+        <p className="muted">{cfg.help}</p>
+      </div>
+      <div className="panel stepbox">
+        <h2>2. Download the template</h2>
+        <p className="muted">Open it in Excel or Google Sheets, delete the two example rows and fill in your own. Keep the headings as they are.</p>
+        <button className="ghost" onClick={downloadTemplate}>Download {cfg.label.toLowerCase()} template (CSV)</button>
+      </div>
+      <div className="panel stepbox">
+        <h2>3. Upload your filled file</h2>
+        <label className={`drop ${drag ? 'on' : ''}`} onDragOver={(e) => { e.preventDefault(); setDrag(true); }} onDragLeave={() => setDrag(false)}
+          onDrop={(e) => { e.preventDefault(); setDrag(false); readFile(e.dataTransfer.files[0]); }}>
+          <input type="file" accept=".csv,.txt,.xls,.xlsx,text/csv" hidden onChange={(e) => { readFile(e.target.files[0]); e.target.value = ''; }} />
+          <b>{file || 'Choose a CSV file'}</b><span>or drag and drop it here</span>
+        </label>
+        {fatal && <p className="error">{fatal}</p>}
+        {done && <p className="okmsg">Done. {done.inserted} added{done.skipped ? `, ${done.skipped} skipped (already in the system or incomplete)` : ''}.</p>}
+      </div>
+      {rows && (
+        <div className="panel">
+          <h2>4. Check and import</h2>
+          <div className="chips"><span className="chip ok">{good.length} ready</span>{bad > 0 && <span className="chip bad">{bad} with problems</span>}</div>
+          {bad > 0 && <p className="muted">Rows with problems are left out. Fix them in your file and upload again, or import the ready rows now.</p>}
+          <div className="table-wrap preview">
+            <table>
+              <thead><tr><th>Row</th><th>Check</th>{cfg.cols.map((c) => <th key={c}>{c}</th>)}</tr></thead>
+              <tbody>{rows.slice(0, 200).map((r, i) => (
+                <tr key={i} className={r.errors.length ? 'badrow' : ''}>
+                  <td>{i + 2}</td>
+                  <td>{r.errors.length ? <span className="error">{r.errors.join('; ')}</span> : <span className="okmsg">OK</span>}</td>
+                  {cfg.cols.map((c) => <td key={c}>{r.raw[c]}</td>)}
+                </tr>))}
+              </tbody>
+            </table>
+          </div>
+          {rows.length > 200 && <p className="muted">Showing the first 200 of {rows.length} rows. All ready rows will be imported.</p>}
+          <div className="row end">
+            <button className="ghost" onClick={reset}>Cancel</button>
+            <button className="primary" disabled={!good.length || busy} onClick={run}>{busy ? 'Importing…' : `Import ${good.length} ${good.length === 1 ? 'row' : 'rows'}`}</button>
+          </div>
+        </div>
+      )}
+    </section>
+  );
+}
+
 /* ---------- Login ---------- */
 function Login({ onDone }) {
   const [pw, setPw] = useState(''); const [show, setShow] = useState(false); const [err, setErr] = useState(''); const [busy, setBusy] = useState(false);
@@ -335,6 +427,7 @@ const ICONS = {
   members: <><circle cx="9" cy="8" r="3.5" /><path d="M2 20c0-4 3-6 7-6s7 2 7 6" /><circle cx="17.5" cy="9" r="2.5" /><path d="M18 14c2.5.3 4 2 4 5" /></>,
   activities: <><rect x="3" y="5" width="18" height="16" rx="2" /><path d="M3 10h18M8 3v4M16 3v4" /></>,
   contributions: <><circle cx="12" cy="12" r="9" /><path d="M12 6.5v11M9 9.5c0-2.5 6-2.5 6 0s-6 2-6 4.5 6 2.5 6 0" /></>,
+  import: <path d="M12 16V4M7 9l5-5 5 5M4 20h16" />,
   matches: <><circle cx="12" cy="12" r="9" /><path d="M12 8l4 3-1.5 5h-5L8 11z" /></>,
   expenses: <><path d="M6 3h12v18l-3-2-3 2-3-2-3 2z" /><path d="M9 8h6M9 12h6" /></>,
 };
@@ -366,7 +459,7 @@ export default function App() {
   if (!authed) return <Login onDone={() => setAuthed(true)} />;
   const open = (k, initial) => setForm({ k, initial });
   const go = (n) => { setTab(n); setMenu(false); window.scrollTo(0, 0); };
-  const label = (n) => (n === 'dashboard' ? 'Dashboard' : CFG[n].title);
+  const label = (n) => (n === 'dashboard' ? 'Dashboard' : n === 'import' ? 'Import data' : CFG[n].title);
   return (
     <div className="shell">
       <div className="topbar stripes">
@@ -379,7 +472,7 @@ export default function App() {
         <nav>{NAV.map((n) => (
           <button key={n} className={tab === n ? 'on' : ''} onClick={() => go(n)}>
             <Icon n={n} /><span>{label(n)}</span>
-            {n !== 'dashboard' && <em>{data[n]?.length ?? 0}</em>}
+            {n !== 'dashboard' && n !== 'import' && <em>{data[n]?.length ?? 0}</em>}
           </button>))}
         </nav>
         <div className="side-foot">
@@ -389,7 +482,7 @@ export default function App() {
         </div>
       </aside>
       <main>
-        {tab === 'dashboard' ? <Dashboard data={data} open={open} /> : <Resource key={tab} k={tab} data={data} open={open} reload={reload} toast={toast} />}
+        {tab === 'dashboard' ? <Dashboard data={data} open={open} /> : tab === 'import' ? <ImportPage data={data} reload={reload} toast={toast} /> : <Resource key={tab} k={tab} data={data} open={open} reload={reload} toast={toast} />}
       </main>
       {form && <FormModal {...form} data={data} toast={toast} onClose={() => setForm(null)} onSaved={() => { setForm(null); reload(); }} />}
       <div className="toasts">{toasts.map((t) => <div key={t.id} className={`toast ${t.type}`}>{t.msg}</div>)}</div>
