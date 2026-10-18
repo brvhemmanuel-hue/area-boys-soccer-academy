@@ -58,23 +58,18 @@ tbody tr:hover{background:color-mix(in srgb,var(--lamp) 14%,transparent)}.num{te
 .modal{background:var(--card);border-radius:14px;padding:1.5rem;width:min(560px,100%);max-height:92vh;overflow:auto;animation:pop .18s}
 .modal h2{font-size:1.6rem}.modal label{display:flex;flex-direction:column;gap:.25rem;font-size:.92rem;color:var(--muted)}
 .modal .grid{display:grid;grid-template-columns:1fr 1fr;gap:.8rem}.wide{grid-column:1/-1}
-.login{min-height:100vh;display:grid;place-items:center;padding:1rem;position:relative;isolation:isolate;overflow:hidden;
+.login{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1.5rem;padding:2rem 1rem;position:relative;isolation:isolate;
  background:repeating-linear-gradient(90deg,var(--pitch) 0 44px,var(--pitch2) 44px 88px)}
-.login::before{content:'';position:absolute;inset:0;z-index:-2;
- background:linear-gradient(rgba(8,24,16,.35),rgba(8,24,16,.75)),url('/login-bg.jpg') center 15%/cover no-repeat}
-.login::after{content:'';display:none}
-@media(min-width:900px){
- .login{justify-items:end;padding:2rem max(2rem,9vw)}
- .login::before{background:linear-gradient(rgba(8,24,16,.7),rgba(8,24,16,.85)),url('/login-bg.jpg') center/cover no-repeat;filter:blur(22px);transform:scale(1.15)}
- .login::after{display:block;position:absolute;z-index:-1;left:max(2rem,8vw);top:50%;transform:translateY(-50%);
-  height:min(90vh,780px);aspect-ratio:387/516;background:url('/login-bg.jpg') center/cover no-repeat;border-radius:18px;
-  border:3px solid var(--lamp);box-shadow:0 24px 60px rgba(0,0,0,.5)}
-}
-@media(max-width:899px){.login{align-items:end;padding-bottom:calc(2rem + env(safe-area-inset-bottom))}}
-.login .modal{display:flex;flex-direction:column;gap:.8rem;width:min(380px,100%)}
+.login::before{content:'';position:absolute;inset:0;z-index:-1;
+ background:linear-gradient(rgba(6,24,15,.58),rgba(6,24,15,.82)),url('/login-hero.jpg') center 18%/cover no-repeat}
+.login-head{text-align:center;color:#fff}
+.login-head img{width:76px;height:76px;border-radius:50%;border:3px solid var(--lamp);display:block;margin:0 auto .8rem;background:var(--pitch)}
+.login-head h1{color:#fff;font-size:2.5rem}.login-head p{color:var(--lamp);margin:.2rem 0 0;font-weight:500;letter-spacing:.06em}
+.login .modal{display:flex;flex-direction:column;gap:.8rem;width:min(400px,100%);box-shadow:0 20px 50px rgba(0,0,0,.4)}
+.login .modal h2{margin:0}
 .pw{position:relative}.pw input{padding-right:2.8rem}
 .eye{position:absolute;right:.25rem;top:50%;transform:translateY(-50%);border:0;background:transparent;padding:.4rem;color:var(--muted);display:grid;place-items:center}
-.eye:hover{color:var(--ink);background:transparent}.login .modal{display:flex;flex-direction:column;gap:.8rem;width:min(380px,100%)}
+.eye:hover{color:var(--ink);background:transparent}
 .toasts{position:fixed;right:1rem;bottom:1rem;display:flex;flex-direction:column;gap:.5rem;z-index:30}
 .toast{background:var(--pitch);color:#fff;padding:.7rem 1rem;border-radius:8px;border-left:5px solid var(--lamp);animation:pop .2s}.toast.err{background:var(--red);border-color:#fff}
 @keyframes fade{from{opacity:0}}@keyframes pop{from{opacity:0;transform:translateY(8px) scale(.98)}}
