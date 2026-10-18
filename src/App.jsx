@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState, useCallback } from 'react';
 const CUR = 'GH₵'; // change to your currency
 const money = (n) => `${CUR} ${Number(n || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 const fmtDate = (d) => (d ? new Date(d + 'T00:00:00').toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' }) : '—');
-const today = () => new Date().toISOString().slice(0, 10);
+const today = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; };
 const initials = (n = '') => n.split(' ').filter(Boolean).slice(0, 2).map((w) => w[0]).join('').toUpperCase();
 const hue = (s = '') => [...s].reduce((a, c) => a + c.charCodeAt(0), 0) % 360;
 
@@ -168,7 +168,7 @@ function Resource({ k, data, open, reload, toast }) {
     (f === 'all' || String(r[cfg.filter.key]).toLowerCase() === f.toLowerCase()) &&
     (!q || cfg.search.some((s) => String(r[s] ?? '').toLowerCase().includes(q.toLowerCase())))), [rows, q, f, k]);
   const del = async (r) => {
-    if (!confirm(`Delete this ${cfg.singular}? This cannot be undone.`)) return;
+    if (!confirm(`Delete this ${cfg.singular}? This cannot be undone.${k === 'members' ? ' All of their recorded contributions will be deleted too.' : ''}`)) return;
     try { await api(`${k}?id=${r.id}`, { method: 'DELETE' }); toast(`${cfg.singular[0].toUpperCase() + cfg.singular.slice(1)} deleted`); reload(); }
     catch (e) { toast(e.message, 'err'); }
   };
@@ -308,9 +308,10 @@ function Login({ onDone }) {
     catch (x) { setErr(x.message); setBusy(false); }
   };
   return (
-    <div className="login stripes">
+    <div className="login">
+      <div className="login-head"><img src="/icon-192.png" alt="" /><h1>Club Manager</h1><p>Admin portal</p></div>
       <form className="modal" onSubmit={go}>
-        <h1>Club Manager</h1><p className="muted">Admin sign in</p>
+        <h2>Welcome back</h2><p className="muted">Sign in to continue</p>
         <label>Password
           <div className="pw">
             <input type={show ? 'text' : 'password'} autoFocus autoComplete="current-password" value={pw} onChange={(e) => setPw(e.target.value)} />
