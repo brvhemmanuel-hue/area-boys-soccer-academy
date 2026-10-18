@@ -93,4 +93,12 @@ tbody tr:hover{background:color-mix(in srgb,var(--lamp) 14%,transparent)}.num{te
  .scoreboard{grid-template-columns:1fr}.scoreboard>div{border-right:0;border-bottom:2px dashed #2d4436}.modal .grid{grid-template-columns:1fr}
  .scrim{align-items:end;padding:0}.modal{border-radius:18px 18px 0 0;max-height:90vh}
 }
+section>.panel{margin-bottom:1rem}.stepbox p{margin:.4rem 0 .9rem}
+.seg{display:flex;flex-wrap:wrap;gap:.4rem}.seg button.on{background:var(--pitch);color:#fff;border-color:var(--pitch)}
+[data-theme=dark] .seg button.on{background:var(--lamp);color:#1a1a00;border-color:var(--lamp)}
+.drop{display:flex;flex-direction:column;align-items:center;gap:.2rem;padding:2rem 1rem;border:2px dashed var(--line);border-radius:var(--r);cursor:pointer;text-align:center;transition:background .15s,border-color .15s}
+.drop:hover,.drop.on{border-color:var(--green);background:color-mix(in srgb,var(--green) 10%,transparent)}.drop span{color:var(--muted);font-size:.92rem}
+.chips{display:flex;gap:.5rem;margin-bottom:.6rem}.chip{padding:.2rem .8rem;border-radius:99px;font-weight:600;font-size:.92rem}
+.chip.ok{background:#cfeedd;color:#0d5a37}.chip.bad{background:#fadbd4;color:#8f2a1a}.okmsg{color:var(--green);margin:.5rem 0 0;font-weight:600}
+.preview{max-height:420px;overflow:auto;margin-top:.6rem}.preview td{font-size:.92rem}.preview .error{white-space:normal;margin:0}.badrow{background:color-mix(in srgb,var(--red) 8%,transparent)}
 @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
