@@ -58,7 +58,11 @@ tbody tr:hover{background:color-mix(in srgb,var(--lamp) 14%,transparent)}.num{te
 .modal{background:var(--card);border-radius:14px;padding:1.5rem;width:min(560px,100%);max-height:92vh;overflow:auto;animation:pop .18s}
 .modal h2{font-size:1.6rem}.modal label{display:flex;flex-direction:column;gap:.25rem;font-size:.92rem;color:var(--muted)}
 .modal .grid{display:grid;grid-template-columns:1fr 1fr;gap:.8rem}.wide{grid-column:1/-1}
-.login{min-height:100vh;display:grid;place-items:center;padding:1rem}.login .modal{display:flex;flex-direction:column;gap:.8rem;width:min(380px,100%)}
+.login{min-height:100vh;display:grid;place-items:center;padding:1rem;
+ background:linear-gradient(rgba(8,24,16,.4),rgba(8,24,16,.72)),url('/login-bg.jpg') center 20%/cover no-repeat,repeating-linear-gradient(90deg,var(--pitch) 0 44px,var(--pitch2) 44px 88px)}
+.pw{position:relative}.pw input{padding-right:2.8rem}
+.eye{position:absolute;right:.25rem;top:50%;transform:translateY(-50%);border:0;background:transparent;padding:.4rem;color:var(--muted);display:grid;place-items:center}
+.eye:hover{color:var(--ink);background:transparent}.login .modal{display:flex;flex-direction:column;gap:.8rem;width:min(380px,100%)}
 .toasts{position:fixed;right:1rem;bottom:1rem;display:flex;flex-direction:column;gap:.5rem;z-index:30}
 .toast{background:var(--pitch);color:#fff;padding:.7rem 1rem;border-radius:8px;border-left:5px solid var(--lamp);animation:pop .2s}.toast.err{background:var(--red);border-color:#fff}
 @keyframes fade{from{opacity:0}}@keyframes pop{from{opacity:0;transform:translateY(8px) scale(.98)}}
