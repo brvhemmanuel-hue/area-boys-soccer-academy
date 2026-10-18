@@ -69,7 +69,7 @@ export default async function handler(req, res) {
       if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
       const pw = req.body?.password;
       if (!process.env.ADMIN_PASSWORD || pw !== process.env.ADMIN_PASSWORD)
-        return res.status(401).json({ error: 'Wrong password' });
+        { await new Promise((r) => setTimeout(r, 600)); return res.status(401).json({ error: 'Wrong password' }); }
       return res.json({ token: sign() });
     }
 
@@ -78,6 +78,35 @@ export default async function handler(req, res) {
 
     await ensureSchema();
     if (resource === 'stats') return res.json(await stats());
+
+    if (resource === 'import') {
+      if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
+      const { type, rows } = req.body || {};
+      const t = T[type];
+      if (!t || !Array.isArray(rows) || !rows.length) return res.status(400).json({ error: 'Nothing to import' });
+      if (rows.length > 1000) return res.status(400).json({ error: 'A maximum of 1,000 rows can be imported at once' });
+      let list = rows.map((r) => Object.fromEntries(t.cols.map((c) => [c, clean(r[c])])));
+      const must = { members: ['full_name'], activities: ['title'], contributions: ['member_id', 'amount'], matches: ['opponent', 'match_date'], expenses: ['title', 'amount'] }[type];
+      const before = list.length;
+      list = list.filter((r) => must.every((c) => r[c] !== null));
+      if (type === 'members') {
+        const seen = new Set((await sql`SELECT lower(full_name) AS n, COALESCE(phone,'') AS p FROM members`).map((x) => x.n + '|' + x.p));
+        list = list.filter((r) => { const k = String(r.full_name).toLowerCase() + '|' + (r.phone || ''); if (seen.has(k)) return false; seen.add(k); return true; });
+      } else if (type === 'activities') {
+        const seen = new Set((await sql`SELECT lower(title) AS n, activity_date::text AS d FROM activities`).map((x) => x.n + '|' + x.d));
+        list = list.filter((r) => { const k = String(r.title).toLowerCase() + '|' + (r.activity_date || new Date().toISOString().slice(0, 10)); if (seen.has(k)) return false; seen.add(k); return true; });
+      } else if (type === 'contributions') {
+        const ids = new Set((await sql`SELECT id FROM members`).map((x) => x.id));
+        list = list.filter((r) => ids.has(Number(r.member_id)));
+      }
+      if (list.length) {
+        const keys = t.cols;
+        const params = [];
+        const tuples = list.map((r) => '(' + keys.map((k) => { params.push(r[k]); return '$' + params.length; }).join(',') + ')');
+        await sql.query(`INSERT INTO ${type} (${keys.join(',')}) VALUES ${tuples.join(',')}`, params);
+      }
+      return res.json({ inserted: list.length, skipped: before - list.length });
+    }
 
     const t = T[resource];
     if (!t) return res.status(404).json({ error: 'Unknown resource' });
